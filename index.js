@@ -19,8 +19,12 @@ const logger = {
     child: () => logger
 };
 
+const isRailway = process.env.RAILWAY_ENVIRONMENT_NAME || process.env.RAILWAY_ENVIRONMENT_ID;
+const dataDir = isRailway ? '/data' : process.cwd();
+const authDir = path.join(dataDir, 'auth_session');
+
 async function connectToWhatsApp() {
-    const { state, saveCreds } = await useMultiFileAuthState('auth_session');
+    const { state, saveCreds } = await useMultiFileAuthState(authDir);
 
     const sock = makeWASocket({
         logger,
