@@ -39,6 +39,10 @@ async function connectToWhatsApp() {
 
         if (qr) {
             qrcode.generate(qr, { small: true });
+
+            // Railway logs often distort terminal QR codes. Provide a clickable link as a fallback.
+            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`;
+            console.log(`\n\n[RAILWAY FALLBACK] If the QR code above is distorted, click this link to view it:\n${qrImageUrl}\n\n`);
         }
 
         if (connection === 'close') {
