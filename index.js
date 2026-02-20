@@ -55,17 +55,13 @@ async function connectToWhatsApp() {
         const msg = m.messages[0];
         if (!msg.message || m.type !== 'notify') return;
 
-        // Ignore messages from self if desired, but user said "testing... only respond to messages where msg.key.fromMe is true"
-        // Wait, user said: "Privacy: For testing, the bot is currently set to only respond to messages where msg.key.fromMe is true."
-        // So we strictly enforce fromMe === true
-        if (!msg.key.fromMe) return;
-
         const remoteJid = msg.key.remoteJid;
         const textMessage = msg.message.conversation || msg.message.extendedTextMessage?.text;
 
         if (!textMessage) return;
 
-        console.log(`[${remoteJid}] (Self): ${textMessage}`);
+        const sender = msg.key.fromMe ? 'Self' : (msg.key.participant || remoteJid);
+        console.log(`[${remoteJid}] (${sender}): ${textMessage}`);
 
         await handleCommand(sock, msg, textMessage);
     });
