@@ -36,30 +36,35 @@ async function connectToWhatsApp() {
 
     let pairingCodeRequested = false;
 
-    sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-
-        if (process.env.PAIRING_NUMBER && !sock.authState.creds.registered && !pairingCodeRequested) {
-            if (connection === 'connecting' || qr) {
+    // Pairing code logic
+    if (process.env.PAIRING_NUMBER && !sock.authState.creds.registered) {
+        setTimeout(async () => {
+            if (!pairingCodeRequested) {
                 pairingCodeRequested = true;
-                setTimeout(async () => {
-                    try {
-                        const code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
-                        console.log(`\n=======================================================\nPAIRING CODE: ${code}\nEnter this code in WhatsApp -> Linked Devices -> Link with phone number\n=======================================================\n`);
-                    } catch (err) {
-                        console.error('Failed to request pairing code:', err);
-                        pairingCodeRequested = false; // Allow retry
-                    }
-                }, 3000); // 3-second delay to prevent 428 Precondition Required error
+                try {
+                    const code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
+                    console.log(`\n=======================================================\nPAIRING CODE: ${code}\nEnter this code in WhatsApp -> Linked Devices -> Link with phone number\n=======================================================\n`);
+                } catch (err) {
+                    console.error('Failed to request pairing code:', err);
+                    pairingCodeRequested = false;
+                }
             }
-        }
+        }, 5000); // Wait 5 seconds for connection to explicitly establish websocket
+    }
+
+    sock.ev.on('connection.update', async (update) => {
+        const { connection, lastDisconnect } = update;
 
         if (connection === 'close') {
             const shouldReconnect = (lastDisconnect?.error instanceof Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
             console.log('Connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
+
+            // If we are trying to pair, don't rapid-fire reconnects immediately on 401
+            const isPairingFailure = lastDisconnect.error?.output?.statusCode === 401 || lastDisconnect.error?.output?.statusCode === 428;
+
             if (shouldReconnect) {
-                // simple backoff
-                setTimeout(connectToWhatsApp, 2000);
+                const backoff = isPairingFailure ? 5000 : 2000;
+                setTimeout(connectToWhatsApp, backoff);
             } else {
                 console.log('Provide a new session by deleting the auth_session folder.');
             }
