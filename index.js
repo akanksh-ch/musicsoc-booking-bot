@@ -29,8 +29,20 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         logger,
         auth: state,
-        defaultQueryTimeoutMs: undefined // Keep connection alive
+        defaultQueryTimeoutMs: undefined, // Keep connection alive
+        browser: ['Ubuntu', 'Chrome', '20.0.04'] // Required for pairing code
     });
+
+    if (process.env.PAIRING_NUMBER && !sock.authState.creds.registered) {
+        setTimeout(async () => {
+            try {
+                const code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
+                console.log(`\n=======================================================\nPAIRING CODE: ${code}\nEnter this code in WhatsApp -> Linked Devices -> Link with phone number\n=======================================================\n`);
+            } catch (err) {
+                console.error('Failed to request pairing code:', err);
+            }
+        }, 3000);
+    }
 
     sock.ev.on('creds.update', saveCreds);
 
