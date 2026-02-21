@@ -42,13 +42,15 @@ async function connectToWhatsApp() {
         if (process.env.PAIRING_NUMBER && !sock.authState.creds.registered && !pairingCodeRequested) {
             if (connection === 'connecting' || qr) {
                 pairingCodeRequested = true;
-                try {
-                    const code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
-                    console.log(`\n=======================================================\nPAIRING CODE: ${code}\nEnter this code in WhatsApp -> Linked Devices -> Link with phone number\n=======================================================\n`);
-                } catch (err) {
-                    console.error('Failed to request pairing code:', err);
-                    pairingCodeRequested = false; // Allow retry
-                }
+                setTimeout(async () => {
+                    try {
+                        const code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
+                        console.log(`\n=======================================================\nPAIRING CODE: ${code}\nEnter this code in WhatsApp -> Linked Devices -> Link with phone number\n=======================================================\n`);
+                    } catch (err) {
+                        console.error('Failed to request pairing code:', err);
+                        pairingCodeRequested = false; // Allow retry
+                    }
+                }, 3000); // 3-second delay to prevent 428 Precondition Required error
             }
         }
 
