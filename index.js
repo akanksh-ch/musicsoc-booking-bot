@@ -56,17 +56,21 @@ async function connectToWhatsApp() {
         const { connection, lastDisconnect } = update;
 
         if (connection === 'close') {
-            const shouldReconnect = (lastDisconnect?.error instanceof Boom)?.output?.statusCode !== DisconnectReason.loggedOut;
+            const statusCode = lastDisconnect?.error?.output?.statusCode;
+            const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+
             console.log('Connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect);
 
             // If we are trying to pair, don't rapid-fire reconnects immediately on 401
-            const isPairingFailure = lastDisconnect.error?.output?.statusCode === 401 || lastDisconnect.error?.output?.statusCode === 428;
+            const isPairingFailure = statusCode === 401 || statusCode === 428;
 
             if (shouldReconnect) {
                 const backoff = isPairingFailure ? 5000 : 2000;
                 setTimeout(connectToWhatsApp, backoff);
             } else {
-                console.log('Provide a new session by deleting the auth_session folder.');
+                console.log('Logged out from WhatsApp. Deleting old session and restarting...');
+                fs.rmSync(authDir, { recursive: true, force: true });
+                setTimeout(connectToWhatsApp, 2000);
             }
         } else if (connection === 'open') {
             console.log('Opened connection to WhatsApp!');
