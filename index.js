@@ -76,6 +76,12 @@ async function connectToWhatsApp() {
         if (!msg.message || m.type !== 'notify') return;
 
         const remoteJid = msg.key.remoteJid;
+
+        // Optional: Restrict bot to a specific group (e.g., 120363408645710974@g.us)
+        if (process.env.ALLOWED_GROUP_ID && remoteJid !== process.env.ALLOWED_GROUP_ID) {
+            return;
+        }
+
         const textMessage = msg.message.conversation || msg.message.extendedTextMessage?.text;
 
         if (!textMessage) return;
