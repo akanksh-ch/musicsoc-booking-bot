@@ -1,7 +1,13 @@
+```json
 {
   "dependencies": {
     "baileys": "^7.0.0-rc.9",
     "pg": "^8.18.0"
   },
+  "main": "index.js",
+  "scripts": {
+    "start": "node --env-file=.env index.js"
+  },
   "type": "module"
 }
+```
