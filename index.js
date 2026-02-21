@@ -1,6 +1,5 @@
 import makeWASocket, { useMultiFileAuthState, DisconnectReason } from 'baileys';
 import { Boom } from '@hapi/boom';
-import qrcode from 'qrcode-terminal';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -33,28 +32,24 @@ async function connectToWhatsApp() {
         browser: ['Ubuntu', 'Chrome', '20.0.04'] // Required for pairing code
     });
 
-    if (process.env.PAIRING_NUMBER && !sock.authState.creds.registered) {
-        setTimeout(async () => {
-            try {
-                const code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
-                console.log(`\n=======================================================\nPAIRING CODE: ${code}\nEnter this code in WhatsApp -> Linked Devices -> Link with phone number\n=======================================================\n`);
-            } catch (err) {
-                console.error('Failed to request pairing code:', err);
-            }
-        }, 3000);
-    }
-
     sock.ev.on('creds.update', saveCreds);
 
-    sock.ev.on('connection.update', (update) => {
+    let pairingCodeRequested = false;
+
+    sock.ev.on('connection.update', async (update) => {
         const { connection, lastDisconnect, qr } = update;
 
-        if (qr) {
-            qrcode.generate(qr, { small: true });
-
-            // Railway logs often distort terminal QR codes. Provide a clickable link as a fallback.
-            const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(qr)}`;
-            console.log(`\n\n[RAILWAY FALLBACK] If the QR code above is distorted, click this link to view it:\n${qrImageUrl}\n\n`);
+        if (process.env.PAIRING_NUMBER && !sock.authState.creds.registered && !pairingCodeRequested) {
+            if (connection === 'connecting' || qr) {
+                pairingCodeRequested = true;
+                try {
+                    const code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
+                    console.log(`\n=======================================================\nPAIRING CODE: ${code}\nEnter this code in WhatsApp -> Linked Devices -> Link with phone number\n=======================================================\n`);
+                } catch (err) {
+                    console.error('Failed to request pairing code:', err);
+                    pairingCodeRequested = false; // Allow retry
+                }
+            }
         }
 
         if (connection === 'close') {
@@ -76,12 +71,6 @@ async function connectToWhatsApp() {
         if (!msg.message || m.type !== 'notify') return;
 
         const remoteJid = msg.key.remoteJid;
-
-        // Optional: Restrict bot to a specific group (e.g., 120363408645710974@g.us)
-        if (process.env.ALLOWED_GROUP_ID && remoteJid !== process.env.ALLOWED_GROUP_ID) {
-            return;
-        }
-
         const textMessage = msg.message.conversation || msg.message.extendedTextMessage?.text;
 
         if (!textMessage) return;
