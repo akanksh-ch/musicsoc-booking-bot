@@ -1,4 +1,3 @@
-```json
 {
   "dependencies": {
     "baileys": "^7.0.0-rc.9",
@@ -10,4 +9,3 @@
   },
   "type": "module"
 }
-```
