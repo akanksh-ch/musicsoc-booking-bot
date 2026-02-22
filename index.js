@@ -42,7 +42,8 @@ async function connectToWhatsApp() {
             if (!pairingCodeRequested) {
                 pairingCodeRequested = true;
                 try {
-                    const code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
+                    let code = await sock.requestPairingCode(process.env.PAIRING_NUMBER);
+                    code = code?.match(/.{1,4}/g)?.join('-') || code;
                     console.log(`\n=======================================================\nPAIRING CODE: ${code}\nEnter this code in WhatsApp -> Linked Devices -> Link with phone number\n=======================================================\n`);
                 } catch (err) {
                     console.error('Failed to request pairing code:', err);
