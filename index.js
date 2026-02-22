@@ -89,6 +89,12 @@ async function connectToWhatsApp() {
         const sender = msg.key.fromMe ? 'Self' : (msg.key.participant || remoteJid);
         console.log(`[${remoteJid}] (${sender}): ${textMessage}`);
 
+        // Optional: Restrict bot to a specific group (e.g., 120363408645710974@g.us)
+        // By placing this *after* the console.log, you can see the ID of new groups in your terminal output
+        if (process.env.ALLOWED_GROUP_ID && remoteJid !== process.env.ALLOWED_GROUP_ID) {
+            return;
+        }
+
         await handleCommand(sock, msg, textMessage);
     });
 }
