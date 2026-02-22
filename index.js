@@ -103,7 +103,8 @@ async function connectToWhatsApp() {
 
         // Optional: Restrict bot to a specific group (e.g., 120363408645710974@g.us)
         // By placing this *after* the console.log, you can see the ID of new groups in your terminal output
-        if (process.env.ALLOWED_GROUP_ID && remoteJid !== process.env.ALLOWED_GROUP_ID) {
+        const targetGroup = process.env.TARGET_GROUP || process.env.ALLOWED_GROUP_ID;
+        if (targetGroup && remoteJid !== targetGroup) {
             return;
         }
 
