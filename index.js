@@ -74,18 +74,6 @@ async function connectToWhatsApp() {
             }
         } else if (connection === 'open') {
             console.log('Opened connection to WhatsApp!');
-
-            // Fetch and log all groups the bot is in so the admin can easily see the IDs
-            try {
-                const groups = await sock.groupFetchAllParticipating();
-                console.log('\n--- GROUPS I AM IN ---');
-                for (const [id, metadata] of Object.entries(groups)) {
-                    console.log(`- ${metadata.subject} (ID: ${id})`);
-                }
-                console.log('----------------------\n');
-            } catch (err) {
-                console.error('Failed to fetch groups on startup:', err);
-            }
         }
     });
 
